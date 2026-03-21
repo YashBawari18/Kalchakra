@@ -1,0 +1,67 @@
+require('dotenv').config();
+const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
+const mongoose = require('mongoose');
+const cors = require('cors');
+
+const authRoutes = require('./routes/auth');
+const gameRoutes = require('./routes/game');
+const adminRoutes = require('./routes/admin');
+
+const app = express();
+const server = http.createServer(app);
+
+const io = new Server(server, {
+  cors: {
+    origin: process.env.CLIENT_URL || 'http://localhost:3000',
+    methods: ['GET', 'POST']
+  }
+});
+
+// Middleware
+app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:3000' }));
+app.use(express.json());
+
+// Make io accessible in routes
+app.set('io', io);
+
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/game', gameRoutes);
+app.use('/api/admin', adminRoutes);
+
+// Health check
+app.get('/api/health', (req, res) => res.json({ status: 'KALCHAKRA SERVER ONLINE', time: new Date() }));
+
+// Socket.io
+io.on('connection', (socket) => {
+  console.log('Client connected:', socket.id);
+
+  socket.on('join_team', (teamId) => {
+    socket.join(`team_${teamId.toUpperCase()}`);
+    console.log(`Team ${teamId} joined their room`);
+  });
+
+  socket.on('join_admin', () => {
+    socket.join('admin_room');
+  });
+
+  socket.on('disconnect', () => {
+    console.log('Client disconnected:', socket.id);
+  });
+});
+
+// MongoDB connection
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => {
+    console.log('✓ MongoDB connected');
+    server.listen(process.env.PORT || 5000, () => {
+      console.log(`✓ Kalchakra server running on port ${process.env.PORT || 5000}`);
+      console.log(`  Admin key: ${process.env.ADMIN_KEY}`);
+    });
+  })
+  .catch(err => {
+    console.error('MongoDB connection error:', err.message);
+    process.exit(1);
+  });
