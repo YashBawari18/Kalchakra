@@ -191,7 +191,10 @@ router.post('/penalty', protect, async (req, res) => {
       team.score = Math.max(0, team.score - deduction);
       team.penaltyPoints += deduction;
       await team.save();
-      if (io) io.emit('leaderboard_update', await getLeaderboard());
+      if (io) {
+        io.emit('leaderboard_update', await getLeaderboard());
+        io.to('admin_room').emit('admin_log', `[ANTI-CHEAT] ${team.teamName} (${team.teamId}) switched tabs! -200 pts.`);
+      }
       res.json({ score: team.score, deduction, tabSwitches: team.tabSwitches });
     } else {
       res.status(400).json({ error: 'Unknown penalty type' });

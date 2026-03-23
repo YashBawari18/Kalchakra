@@ -18,7 +18,7 @@ function SocketBridge() {
     const s = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000', { reconnection: true });
     socketRef.current = s;
 
-    const events = ['leaderboard_update','round_unlocked','freeze','penalty','broadcast','lab_assistant','game_started','game_stopped','team_created'];
+    const events = ['leaderboard_update','round_unlocked','round_locked','all_rounds_locked','freeze','penalty','broadcast','lab_assistant','game_started','game_stopped','team_created','admin_log'];
     events.forEach(ev => {
       s.on(ev, (data) => {
         window.dispatchEvent(new CustomEvent('kalchakra_socket', { detail: { type: ev, data } }));
@@ -29,8 +29,15 @@ function SocketBridge() {
   }, []);
 
   useEffect(() => {
-    if (team?.teamId && socketRef.current) {
-      socketRef.current.emit('join_team', team.teamId);
+    if (socketRef.current) {
+      if (team?.teamId) {
+        socketRef.current.emit('join_team', team.teamId);
+      }
+      // Note: AdminPanel checks role via AuthContext. 
+      // If the current user has the admin key in localStorage, join admin room.
+      if (localStorage.getItem('kalchakra_role') === 'admin') {
+        socketRef.current.emit('join_admin');
+      }
     }
   }, [team?.teamId]);
 

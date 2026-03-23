@@ -30,9 +30,9 @@ router.post('/login', async (req, res) => {
     // Get game state
     const gameState = await GameState.findOne({ singleton: 'main' });
 
-    // Merge globally unlocked rounds
-    const merged = [...new Set([...team.roundsUnlocked, ...(gameState?.roundsGloballyUnlocked || [1])])];
-    team.roundsUnlocked = merged;
+    // Merge globally unlocked rounds dynamically for the response
+    const globalRounds = gameState?.roundsGloballyUnlocked || [];
+    const merged = [...new Set([...team.roundsUnlocked, ...globalRounds])];
 
     res.json({
       success: true,
@@ -65,7 +65,8 @@ router.post('/login', async (req, res) => {
 // GET /api/auth/me - get current team data
 router.get('/me', protect, async (req, res) => {
   const gameState = await GameState.findOne({ singleton: 'main' });
-  const merged = [...new Set([...req.team.roundsUnlocked, ...(gameState?.roundsGloballyUnlocked || [1])])];
+  const globalRounds = gameState?.roundsGloballyUnlocked || [];
+  const merged = [...new Set([...req.team.roundsUnlocked, ...globalRounds])];
 
   res.json({
     team: {

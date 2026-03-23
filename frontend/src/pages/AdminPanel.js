@@ -33,7 +33,19 @@ export default function AdminPanel() {
     if (role !== 'admin') { navigate('/'); return; }
     refresh();
     const iv = setInterval(refresh, 10000);
-    return () => clearInterval(iv);
+
+    const handleSocket = (e) => {
+      const { type, data } = e.detail || {};
+      if (type === 'admin_log') {
+        addLog(data);
+      }
+    };
+    window.addEventListener('kalchakra_socket', handleSocket);
+
+    return () => {
+      clearInterval(iv);
+      window.removeEventListener('kalchakra_socket', handleSocket);
+    };
   }, [role, navigate]);
 
   const refresh = async () => {
