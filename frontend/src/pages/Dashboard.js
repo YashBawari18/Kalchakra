@@ -33,6 +33,17 @@ export default function Dashboard() {
         updateTeam({ roundsUnlocked: [...(team?.roundsUnlocked || [1]), data.round] });
         setAlert({ icon: '🔓', title: 'ROUND UNLOCKED', message: `Round ${data.round} is now accessible!` });
       }
+      if (type === 'round_locked') {
+        const filtered = (team?.roundsUnlocked || [1]).filter(r => r !== data.round);
+        updateTeam({ roundsUnlocked: filtered });
+        setAlert({ icon: '🔒', title: 'ROUND LOCKED', message: `Round ${data.round} has been locked by admin.` });
+        if (activeRound === data.round) setActiveRound(1); // Force back to R1 or something safe
+      }
+      if (type === 'all_rounds_locked') {
+        updateTeam({ roundsUnlocked: [1] });
+        setAlert({ icon: '🚷', title: 'ALL ROUNDS LOCKED', message: `All rounds have been locked by admin.` });
+        setActiveRound(1);
+      }
       if (type === 'freeze') { setFreezeSecs(data.seconds); setFrozen(true); }
       if (type === 'penalty') {
         updateTeam({ score: Math.max(0, (team?.score || 0) - (data.points || 500)) });

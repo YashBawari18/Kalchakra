@@ -8,6 +8,8 @@ const cors = require('cors');
 const authRoutes = require('./routes/auth');
 const gameRoutes = require('./routes/game');
 const adminRoutes = require('./routes/admin');
+const registrationRoutes = require('./routes/registration');
+const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
@@ -22,6 +24,7 @@ const io = new Server(server, {
 // Middleware
 app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:3000' }));
 app.use(express.json());
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Make io accessible in routes
 app.set('io', io);
@@ -30,6 +33,7 @@ app.set('io', io);
 app.use('/api/auth', authRoutes);
 app.use('/api/game', gameRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/register', registrationRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'KALCHAKRA SERVER ONLINE', time: new Date() }));

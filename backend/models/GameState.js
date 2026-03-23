@@ -9,7 +9,8 @@ const GameStateSchema = new mongoose.Schema({
   labAssistantActive: { type: Boolean, default: false },
   labAssistantQuestion: { type: String },
   labAssistantAnswer: { type: String },
-  labAssistantDeadline: { type: Date }
+  labAssistantDeadline: { type: Date },
+  registrationsLocked: { type: Boolean, default: false }
 }, { timestamps: true });
 
 module.exports = mongoose.model('GameState', GameStateSchema);

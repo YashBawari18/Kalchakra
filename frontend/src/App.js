@@ -5,6 +5,8 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import AdminPanel from './pages/AdminPanel';
+import LandingPage from './pages/LandingPage';
+import RegistrationForm from './pages/RegistrationForm';
 import './index.css';
 
 // Socket bridge - dispatches events to components via window
@@ -55,7 +57,9 @@ export default function App() {
       <BrowserRouter>
         <SocketBridge />
         <Routes>
-          <Route path="/" element={<Login />} />
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/register" element={<RegistrationForm />} />
+          <Route path="/login" element={<Login />} />
           <Route path="/dashboard" element={<ProtectedTeam><Dashboard /></ProtectedTeam>} />
           <Route path="/admin" element={<ProtectedAdmin><AdminPanel /></ProtectedAdmin>} />
           <Route path="*" element={<Navigate to="/" replace />} />

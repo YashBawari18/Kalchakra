@@ -28,6 +28,9 @@ API.interceptors.response.use(
 export const login = (teamId, password) => API.post('/api/auth/login', { teamId, password });
 export const getMe = () => API.get('/api/auth/me');
 export const logout = () => API.post('/api/auth/logout');
+export const registerTeam = (formData) => API.post('/api/register', formData, {
+  headers: { 'Content-Type': 'multipart/form-data' }
+});
 
 // Game
 export const getQuestion = (round) => API.get(`/api/game/question/${round}`);
@@ -51,5 +54,13 @@ export const adminBroadcast = (message) => API.post('/api/admin/broadcast', { me
 export const adminLabAssistant = (question, answer, seconds) => API.post('/api/admin/lab-assistant', { question, answer, seconds }, adminHeaders());
 export const adminLeaderboard = () => API.get('/api/admin/leaderboard', adminHeaders());
 export const adminReset = () => API.delete('/api/admin/reset', adminHeaders());
+
+// New Admin Registration & Locking
+export const adminGetRegistrations = () => API.get('/api/register/admin/all', adminHeaders());
+export const adminApproveRegistration = (id) => API.post(`/api/register/admin/approve/${id}`, {}, adminHeaders());
+export const adminDeleteRegistration = (id) => API.delete(`/api/register/admin/reject/${id}`, adminHeaders());
+export const adminToggleRegLock = () => API.post('/api/register/admin/toggle-lock', {}, adminHeaders());
+export const adminLockRound = (round) => API.post('/api/admin/lock-round', { round }, adminHeaders());
+export const adminLockAllRounds = () => API.post('/api/admin/lock-all-rounds', {}, adminHeaders());
 
 export default API;

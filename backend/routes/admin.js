@@ -123,6 +123,43 @@ router.post('/unlock-round', async (req, res) => {
   }
 });
 
+// POST /api/admin/lock-round
+router.post('/lock-round', async (req, res) => {
+  try {
+    const { round } = req.body;
+    const io = req.app.get('io');
+    
+    await GameState.findOneAndUpdate(
+      { singleton: 'main' }, 
+      { $pull: { roundsGloballyUnlocked: round } }
+    );
+
+    // Also remove from all teams to ensure it reflects on their dashboard
+    await Team.updateMany({}, { $pull: { roundsUnlocked: round } });
+
+    if (io) io.emit('round_locked', { round });
+    res.json({ success: true, round });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// POST /api/admin/lock-all-rounds
+router.post('/lock-all-rounds', async (req, res) => {
+  try {
+    const io = req.app.get('io');
+    await GameState.findOneAndUpdate({ singleton: 'main' }, { roundsGloballyUnlocked: [] });
+    
+    // Reset all teams to only have round 1 (or none if preferred, but [1] is safer)
+    await Team.updateMany({}, { $set: { roundsUnlocked: [1] } });
+
+    if (io) io.emit('all_rounds_locked');
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // POST /api/admin/freeze
 router.post('/freeze', async (req, res) => {
   try {
@@ -219,17 +256,29 @@ router.get('/submissions/:teamId', async (req, res) => {
 // DELETE /api/admin/reset
 router.delete('/reset', async (req, res) => {
   try {
-    await Team.updateMany({}, {
-      score: 0, currentRound: 1, roundsCompleted: [], roundsUnlocked: [1],
-      penalties: 0, penaltyPoints: 0, tabSwitches: 0, isFrozen: false,
-      sessionToken: null, gameStartTime: null, r3Stage: 0,
-      roundTimes: {}
-    });
+    // Thorough wipe as requested
+    await Team.deleteMany({});
+    await Registration.deleteMany({});
+    await Question.deleteMany({});
     await Submission.deleteMany({});
-    await GameState.findOneAndUpdate({ singleton: 'main' }, { isRunning: false, roundsGloballyUnlocked: [1], broadcastMessage: '' });
-    res.json({ success: true, message: 'Game reset complete' });
+    
+    // Reset GameState to initial defaults
+    await GameState.findOneAndUpdate(
+      { singleton: 'main' }, 
+      { 
+        isRunning: false, 
+        roundsGloballyUnlocked: [1], 
+        broadcastMessage: '',
+        registrationsLocked: false,
+        labAssistantActive: false
+      },
+      { upsert: true }
+    );
+
+    res.json({ success: true, message: 'Total system reset complete. All data wiped.' });
   } catch (err) {
-    res.status(500).json({ error: 'Server error' });
+    console.error('Reset error:', err);
+    res.status(500).json({ error: 'Server error during reset' });
   }
 });
 

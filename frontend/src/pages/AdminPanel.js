@@ -7,7 +7,9 @@ import Leaderboard from '../components/Leaderboard';
 import {
   adminGetTeams, adminCreateTeam, adminStartGame, adminStopGame,
   adminUnlockRound, adminFreezeTeam, adminPenaltyTeam,
-  adminBroadcast, adminLabAssistant, adminLeaderboard, adminReset
+  adminBroadcast, adminLabAssistant, adminLeaderboard, adminReset,
+  adminGetRegistrations, adminApproveRegistration, adminDeleteRegistration,
+  adminToggleRegLock, adminLockRound, adminLockAllRounds, adminGetGameState
 } from '../api';
 
 export default function AdminPanel() {
@@ -23,6 +25,9 @@ export default function AdminPanel() {
   const [labA, setLabA] = useState('');
   const [newTeam, setNewTeam] = useState({ teamId: '', teamName: '', password: '', p1: '', p2: '' });
   const [tab, setTab] = useState('monitor');
+  const [registrations, setRegistrations] = useState([]);
+  const [regLocked, setRegLocked] = useState(false);
+  const [roundsUnlocked, setRoundsUnlocked] = useState([]);
 
   useEffect(() => {
     if (role !== 'admin') { navigate('/'); return; }
@@ -33,9 +38,18 @@ export default function AdminPanel() {
 
   const refresh = async () => {
     try {
-      const [t, lb] = await Promise.all([adminGetTeams(), adminLeaderboard()]);
+      const [t, lb, regs, gs] = await Promise.all([
+        adminGetTeams(),
+        adminLeaderboard(),
+        adminGetRegistrations(),
+        adminGetGameState()
+      ]);
       setTeams(t.data.teams || []);
       setLeaderboard(lb.data.leaderboard || []);
+      setRegistrations(regs.data.registrations || []);
+      setRegLocked(gs.data.gameState?.registrationsLocked || false);
+      setRoundsUnlocked(gs.data.gameState?.roundsGloballyUnlocked || []);
+      setGameRunning(gs.data.gameState?.isRunning || false);
     } catch (_) {}
   };
 
@@ -58,8 +72,24 @@ export default function AdminPanel() {
     try {
       await adminUnlockRound(round);
       addLog(`Round ${round} unlocked for all teams`);
-      setAlert({ icon: '🔓', title: 'UNLOCKED', message: `Round ${round} unlocked for all teams.` });
+      refresh();
     } catch (e) { addLog('Unlock error: ' + e.message); }
+  };
+
+  const handleLockRound = async (round) => {
+    try {
+      await adminLockRound(round);
+      addLog(`Round ${round} LOCKED for all teams`);
+      refresh();
+    } catch (e) { addLog('Lock error: ' + e.message); }
+  };
+
+  const handleLockAll = async () => {
+    try {
+      await adminLockAllRounds();
+      addLog('ALL ROUNDS LOCKED');
+      refresh();
+    } catch (e) { addLog('Lock error: ' + e.message); }
   };
 
   const handleFreeze = async (teamId) => {
@@ -118,7 +148,33 @@ export default function AdminPanel() {
     } catch (e) { addLog('Reset error: ' + e.message); }
   };
 
-  const TABS = ['monitor', 'rounds', 'tools', 'teams', 'log'];
+  const handleApprove = async (id) => {
+    try {
+      const res = await adminApproveRegistration(id);
+      addLog(`Registration approved: ID ${res.data.teamId}`);
+      setAlert({ icon: '👻', title: 'TEAM CREATED', message: `Team ID: ${res.data.teamId}\nPassword: ${res.data.password}` });
+      refresh();
+    } catch (e) { addLog('Approve error: ' + e.message); }
+  };
+
+  const handleReject = async (id) => {
+    if (!window.confirm('Delete this registration?')) return;
+    try {
+      await adminDeleteRegistration(id);
+      addLog('Registration deleted');
+      refresh();
+    } catch (e) { addLog('Delete error: ' + e.message); }
+  };
+
+  const handleToggleRegLock = async () => {
+    try {
+      const res = await adminToggleRegLock();
+      setRegLocked(res.data.registrationsLocked);
+      addLog(`Registration lock: ${res.data.registrationsLocked ? 'ON' : 'OFF'}`);
+    } catch (e) { addLog('Toggle lock error: ' + e.message); }
+  };
+
+  const TABS = ['monitor', 'rounds', 'registrations', 'tools', 'teams', 'log'];
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -140,7 +196,12 @@ export default function AdminPanel() {
                 {t.toUpperCase()}
               </button>
             ))}
-            <button className="k-btn sm danger" onClick={handleReset} style={{ marginLeft: 'auto' }}>RESET GAME</button>
+            <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem' }}>
+              <button className={`k-btn sm ${regLocked ? 'danger' : 'gray'}`} onClick={handleToggleRegLock} style={{ borderColor: regLocked ? 'var(--red)' : '#333' }}>
+                {regLocked ? '🔒 REG CLOSED' : '🔓 REG OPEN'}
+              </button>
+              <button className="k-btn sm danger" onClick={handleReset}>RESET GAME</button>
+            </div>
           </div>
 
           {/* MONITOR TAB */}
@@ -172,16 +233,58 @@ export default function AdminPanel() {
           {tab === 'rounds' && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: '1rem' }}>
               {[1, 2, 3].map(r => (
-                <div key={r} className="k-card" style={{ padding: '1rem', textAlign: 'center' }}>
-                  <div style={{ fontFamily: 'var(--horror)', fontSize: '2rem', color: 'var(--red-glow)', marginBottom: '0.5rem' }}>ROUND {r}</div>
+                <div key={r} className="k-card" style={{ padding: '1rem', textAlign: 'center', borderColor: roundsUnlocked.includes(r) ? 'var(--green)' : 'var(--red-dim)' }}>
+                  <div style={{ fontFamily: 'var(--horror)', fontSize: '2rem', color: roundsUnlocked.includes(r) ? 'var(--green)' : 'var(--red-glow)', marginBottom: '0.5rem' }}>ROUND {r}</div>
                   <div style={{ fontFamily: 'var(--mono)', fontSize: '0.75rem', color: 'var(--text-dim)', marginBottom: '1rem' }}>
                     {r === 1 ? 'Binary Puzzle' : r === 2 ? 'Logic + Cipher' : 'Final Multi-Stage'}
                   </div>
-                  <button className="k-btn success full" onClick={() => handleUnlock(r)}>
-                    UNLOCK FOR ALL TEAMS
-                  </button>
+                  {roundsUnlocked.includes(r) ? (
+                    <button className="k-btn danger full" onClick={() => handleLockRound(r)}>LOCK ROUND</button>
+                  ) : (
+                    <button className="k-btn success full" onClick={() => handleUnlock(r)}>UNLOCK ROUND</button>
+                  )}
                 </div>
               ))}
+              <div className="k-card" style={{ padding: '1rem', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <button className="k-btn danger full" onClick={handleLockAll}>LOCK ALL ROUNDS</button>
+              </div>
+            </div>
+          )}
+
+          {/* REGISTRATIONS TAB */}
+          {tab === 'registrations' && (
+            <div className="k-card" style={{ padding: '1rem' }}>
+              <div style={{ fontFamily: 'var(--mono)', fontSize: '0.65rem', color: 'var(--text-dim)', letterSpacing: '0.2em', marginBottom: '1rem', borderBottom: '1px solid #1a0000', paddingBottom: '0.5rem', display: 'flex', justifyContent: 'space-between' }}>
+                <span>// PENDING REGISTRATIONS ({registrations.filter(r => r.status === 'pending').length})</span>
+                <span style={{ color: regLocked ? 'var(--red-glow)' : 'var(--green)' }}>{regLocked ? 'SYSTEM LOCKED' : 'SYSTEM OPEN'}</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                {registrations.map(r => (
+                  <div key={r._id} style={{ display: 'grid', gridTemplateColumns: '1fr 2fr 1fr auto auto', gap: '1rem', alignItems: 'center', padding: '1rem', background: '#080000', borderRadius: '4px', border: `1px solid ${r.status === 'approved' ? '#004411' : '#1a0000'}` }}>
+                    <div>
+                      <div style={{ fontFamily: 'var(--mono)', fontSize: '0.8rem', color: 'var(--text)' }}>{r.teamName || 'NO NAME'}</div>
+                      <div style={{ fontFamily: 'var(--mono)', fontSize: '0.6rem', color: 'var(--text-dim)' }}>{new Date(r.createdAt).toLocaleString()}</div>
+                    </div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)', fontFamily: 'var(--mono)' }}>
+                      P1: {r.participant1.name} ({r.participant1.contact})<br/>
+                      P2: {r.participant2.name} ({r.participant2.contact})
+                    </div>
+                    <div style={{ fontSize: '0.7rem' }}>
+                      <a href={`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/${r.payment.screenshotPath}`} target="_blank" rel="noreferrer" style={{ color: 'var(--blue)' }}>VIEW RECEIPT</a>
+                      <div style={{ fontSize: '0.6rem', color: 'var(--text-dim)' }}>ID: {r.payment.transactionId}</div>
+                    </div>
+                    {r.status === 'pending' ? (
+                      <>
+                        <button className="k-btn sm success" onClick={() => handleApprove(r._id)}>APPROVE</button>
+                        <button className="k-btn sm danger" onClick={() => handleReject(r._id)}>REJECT</button>
+                      </>
+                    ) : (
+                      <span style={{ color: 'var(--green)', fontSize: '0.7rem', fontFamily: 'var(--mono)' }}>APPROVED ✓</span>
+                    )}
+                  </div>
+                ))}
+                {registrations.length === 0 && <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-dim)', fontFamily: 'var(--mono)' }}>NO REGISTRATIONS FOUND</div>}
+              </div>
             </div>
           )}
 
