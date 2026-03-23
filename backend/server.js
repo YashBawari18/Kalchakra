@@ -45,8 +45,14 @@ app.use('/api/register', registrationRoutes);
 app.get('/api/health', (req, res) => res.json({ status: 'KALCHAKRA SERVER ONLINE', time: new Date() }));
 
 // Catch-all: serve React app for any non-API route (fixes reload 404 on Render)
+const fs = require('fs');
+const indexHtml = path.join(frontendBuild, 'index.html');
 app.get('*', (req, res) => {
-  res.sendFile(path.join(frontendBuild, 'index.html'));
+  if (fs.existsSync(indexHtml)) {
+    res.sendFile(indexHtml);
+  } else {
+    res.status(404).json({ error: 'Not found. Run npm run build to generate the frontend.' });
+  }
 });
 
 // Socket.io
