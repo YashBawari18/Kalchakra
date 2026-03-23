@@ -65,16 +65,15 @@ io.on('connection', (socket) => {
   });
 });
 
-// MongoDB connection
+// Start server immediately so Render doesn't timeout waiting for port to bind
+const PORT = process.env.PORT || 5000;
+server.listen(PORT, () => {
+  console.log(`✓ Kalchakra server running on port ${PORT}`);
+  console.log(`  Admin key: ${process.env.ADMIN_KEY}`);
+});
+
+// Connect to MongoDB asynchronously (after server is already listening)
 mongoose.connect(process.env.MONGODB_URI)
-  .then(() => {
-    console.log('✓ MongoDB connected');
-    server.listen(process.env.PORT || 5000, () => {
-      console.log(`✓ Kalchakra server running on port ${process.env.PORT || 5000}`);
-      console.log(`  Admin key: ${process.env.ADMIN_KEY}`);
-    });
-  })
-  .catch(err => {
-    console.error('MongoDB connection error:', err.message);
-    process.exit(1);
-  });
+  .then(() => console.log('✓ MongoDB connected'))
+  .catch(err => console.error('✗ MongoDB connection error:', err.message));
+
