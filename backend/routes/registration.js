@@ -66,7 +66,7 @@ router.post('/', upload.single('screenshot'), async (req, res) => {
       payment: {
         method: paymentMethod,
         transactionId,
-        screenshotPath: req.file.path
+        screenshotPath: req.file.path.replace(/\\/g, '/')
       }
     });
 

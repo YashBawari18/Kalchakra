@@ -270,7 +270,7 @@ export default function AdminPanel() {
                       P2: {r.participant2.name} ({r.participant2.contact})
                     </div>
                     <div style={{ fontSize: '0.7rem' }}>
-                      <a href={`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/${r.payment.screenshotPath}`} target="_blank" rel="noreferrer" style={{ color: 'var(--blue)' }}>VIEW RECEIPT</a>
+                      <a href={`${process.env.REACT_APP_API_URL || window.location.origin}/${r.payment.screenshotPath.replace(/\\/g, '/')}`} target="_blank" rel="noreferrer" style={{ color: 'var(--blue)' }}>VIEW RECEIPT</a>
                       <div style={{ fontSize: '0.6rem', color: 'var(--text-dim)' }}>ID: {r.payment.transactionId}</div>
                     </div>
                     {r.status === 'pending' ? (
