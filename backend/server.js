@@ -22,7 +22,9 @@ const io = new Server(server, {
 });
 
 // Middleware
-app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:3000' }));
+const corsOrigin = process.env.NODE_ENV === 'production' ? '*' : (process.env.CLIENT_URL || 'http://localhost:3000');
+app.use(cors({ origin: corsOrigin }));
+
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 

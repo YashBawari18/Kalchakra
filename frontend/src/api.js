@@ -1,7 +1,9 @@
 import axios from 'axios';
 
+// In production, the frontend is served from the same Express server,
+// so use relative URLs (empty baseURL). In dev, fallback to localhost.
 const API = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000',
+  baseURL: process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:5001'),
 });
 
 // Attach JWT token to every request
