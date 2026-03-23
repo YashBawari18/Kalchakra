@@ -26,6 +26,10 @@ app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:3000' }));
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// Serve React frontend build in production
+const frontendBuild = path.join(__dirname, '../frontend/build');
+app.use(express.static(frontendBuild));
+
 // Make io accessible in routes
 app.set('io', io);
 
@@ -37,6 +41,11 @@ app.use('/api/register', registrationRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'KALCHAKRA SERVER ONLINE', time: new Date() }));
+
+// Catch-all: serve React app for any non-API route (fixes reload 404 on Render)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(frontendBuild, 'index.html'));
+});
 
 // Socket.io
 io.on('connection', (socket) => {
