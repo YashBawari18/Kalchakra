@@ -174,6 +174,28 @@ export default function AdminPanel() {
     } catch (e) { addLog('Toggle lock error: ' + e.message); }
   };
 
+  const handleExportCSV = () => {
+    const headers = [
+      'Team Name', 'Status', 'Registered At',
+      'P1 Name', 'P1 Contact', 'P1 Email', 'P1 College', 'P1 Year/Branch',
+      'P2 Name', 'P2 Contact', 'P2 Email', 'P2 College', 'P2 Year/Branch',
+      'Payment Method', 'Transaction ID', 'Receipt URL'
+    ];
+    const rows = registrations.map(r => [
+      r.teamName, r.status, new Date(r.createdAt).toLocaleString(),
+      r.participant1?.name, r.participant1?.contact, r.participant1?.email, r.participant1?.college, r.participant1?.yearBranch,
+      r.participant2?.name, r.participant2?.contact, r.participant2?.email, r.participant2?.college, r.participant2?.yearBranch,
+      r.payment?.method, r.payment?.transactionId, r.payment?.screenshotPath
+    ].map(v => `"${(v || '').toString().replace(/"/g, '""')}"`));
+    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `kalchakra_registrations_${Date.now()}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+    addLog(`Exported ${registrations.length} registrations to CSV`);
+  };
+
   const TABS = ['monitor', 'rounds', 'registrations', 'tools', 'teams', 'log'];
 
   return (
@@ -254,9 +276,12 @@ export default function AdminPanel() {
           {/* REGISTRATIONS TAB */}
           {tab === 'registrations' && (
             <div className="k-card" style={{ padding: '1rem' }}>
-              <div style={{ fontFamily: 'var(--mono)', fontSize: '0.65rem', color: 'var(--text-dim)', letterSpacing: '0.2em', marginBottom: '1rem', borderBottom: '1px solid #1a0000', paddingBottom: '0.5rem', display: 'flex', justifyContent: 'space-between' }}>
-                <span>// PENDING REGISTRATIONS ({registrations.filter(r => r.status === 'pending').length})</span>
-                <span style={{ color: regLocked ? 'var(--red-glow)' : 'var(--green)' }}>{regLocked ? 'SYSTEM LOCKED' : 'SYSTEM OPEN'}</span>
+              <div style={{ fontFamily: 'var(--mono)', fontSize: '0.65rem', color: 'var(--text-dim)', letterSpacing: '0.2em', marginBottom: '1rem', borderBottom: '1px solid #1a0000', paddingBottom: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>// REGISTRATIONS ({registrations.length} total · {registrations.filter(r => r.status === 'pending').length} pending)</span>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                  <span style={{ color: regLocked ? 'var(--red-glow)' : 'var(--green)' }}>{regLocked ? 'SYSTEM LOCKED' : 'SYSTEM OPEN'}</span>
+                  <button className="k-btn sm" onClick={handleExportCSV} style={{ borderColor: '#224422', color: '#44aa44', fontSize: '0.6rem' }}>⬇ EXPORT CSV</button>
+                </div>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 {registrations.map(r => (
