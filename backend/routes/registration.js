@@ -1,33 +1,34 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const path = require('path');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const cloudinary = require('cloudinary').v2;
 const Registration = require('../models/Registration');
 const GameState = require('../models/GameState');
 const Team = require('../models/Team');
 const Question = require('../models/Question');
 const { adminProtect } = require('../middleware/auth');
 
-// Multer Setup
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/');
+// Cloudinary config (uses env vars)
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+// Multer with Cloudinary storage
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: 'kalchakra-receipts',
+    allowed_formats: ['jpg', 'jpeg', 'png'],
+    resource_type: 'image',
   },
-  filename: (req, file, cb) => {
-    cb(null, `reg_${Date.now()}${path.extname(file.originalname)}`);
-  }
 });
 
 const upload = multer({
   storage,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
-  fileFilter: (req, file, cb) => {
-    const filetypes = /jpeg|jpg|png/;
-    const mimetype = filetypes.test(file.mimetype);
-    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-    if (mimetype && extname) return cb(null, true);
-    cb(new Error('Only images (jpeg, jpg, png) are allowed'));
-  }
 });
 
 // POST /api/register
@@ -66,7 +67,7 @@ router.post('/', upload.single('screenshot'), async (req, res) => {
       payment: {
         method: paymentMethod,
         transactionId,
-        screenshotPath: req.file.path.replace(/\\/g, '/')
+        screenshotPath: req.file.path  // Cloudinary returns a full HTTPS URL
       }
     });
 
