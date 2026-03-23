@@ -9,11 +9,11 @@ const ParticipantSchema = new mongoose.Schema({
 });
 
 const RegistrationSchema = new mongoose.Schema({
-  teamName: { type: String, trim: true },
+  teamName: { type: String, required: true, trim: true },
   participant1: { type: ParticipantSchema, required: true },
   participant2: { type: ParticipantSchema, required: true },
   payment: {
-    method: { type: String, enum: ['UPI', 'Cash', 'Other'], required: true },
+    method: { type: String, enum: ['UPI'], required: true },
     transactionId: { type: String, required: true, trim: true },
     screenshotPath: { type: String, required: true }
   },

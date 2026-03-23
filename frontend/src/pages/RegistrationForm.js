@@ -228,8 +228,8 @@ const RegistrationForm = () => {
             <h3 className="section-title">📂 Section 1: Team Details</h3>
             
             <div className="input-group">
-              <label className="k-label">Team Name (Optional)</label>
-              <input type="text" name="teamName" className="k-input" placeholder="Enter team name" onChange={handleChange} />
+              <label className="k-label">Team Name</label>
+              <input type="text" name="teamName" className="k-input" placeholder="Enter team name" required onChange={handleChange} />
             </div>
 
             <div className="participant-grid">
