@@ -212,33 +212,6 @@ const RegistrationForm = () => {
                   <div className="upi-hint">Scan to pay with any UPI app</div>
                 </div>
               </div>
-
-              <div className="qr-divider">OR</div>
-
-              {/* QR 2 – Shravani Khanvilkar */}
-              <div className="upi-card">
-                <div className="upi-header">
-                  <div className="upi-logo-circle" style={{ background: '#1a4a2a' }}>S</div>
-                  <div className="upi-user-info">
-                    <div className="upi-name">Shravani Khanvilkar</div>
-                    <div className="upi-id">khanvilkarshravani2006@oksbi</div>
-                  </div>
-                </div>
-                <div className="qr-box">
-                  <QRCodeCanvas
-                    value="upi://pay?pa=khanvilkarshravani2006@oksbi&pn=Shravani%20Khanvilkar&am=100&cu=INR"
-                    size={180}
-                    bgColor="#ffffff"
-                    fgColor="#000000"
-                    level="H"
-                    includeMargin={true}
-                  />
-                </div>
-                <div className="upi-footer">
-                  <div className="upi-amount">Amount: ₹100.00</div>
-                  <div className="upi-hint">Scan to pay with any UPI app</div>
-                </div>
-              </div>
             </div>
 
             <div className="payment-grid" style={{ marginTop: '1.5rem' }}>
