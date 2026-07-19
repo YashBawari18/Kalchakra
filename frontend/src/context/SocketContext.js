@@ -8,7 +8,7 @@ export const SocketProvider = ({ children }) => {
   const [connected, setConnected] = useState(false);
 
   useEffect(() => {
-    const s = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000', {
+    const s = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:5001', {
       autoConnect: true,
       reconnection: true
     });

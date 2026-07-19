@@ -74,7 +74,7 @@ cd backend
 
 Edit `.env`:
 ```
-PORT=5000
+PORT=5001
 MONGODB_URI=mongodb://localhost:27017/kalchakra
 JWT_SECRET=kalchakra_super_secret_2024_maya_trap
 ADMIN_KEY=KALCHAKRA-ADMIN-2024
@@ -157,7 +157,7 @@ npm run dev      # development (with auto-reload)
 npm start        # production
 ```
 
-Backend runs on: `http://localhost:5000`
+Backend runs on: `http://localhost:5001`
 
 ---
 
@@ -170,8 +170,8 @@ npm install
 
 Edit `frontend/.env` if needed:
 ```
-REACT_APP_API_URL=http://localhost:5000
-REACT_APP_SOCKET_URL=http://localhost:5000
+REACT_APP_API_URL=http://localhost:5001
+REACT_APP_SOCKET_URL=http://localhost:5001
 ```
 
 Start the frontend:
@@ -314,4 +314,4 @@ Edit the question pools in `backend/config/seed.js` (BINARY_WORDS, R3_STAGE_POOL
 The UI is fully responsive. Teams can play on any device.
 
 **Q: How do I deploy to multiple computers on the same network?**
-Set `REACT_APP_API_URL` to your machine's local IP: `http://192.168.x.x:5000`. All devices on the same WiFi can access it.
+Set `REACT_APP_API_URL` to your machine's local IP: `http://192.168.x.x:5001`. All devices on the same WiFi can access it.

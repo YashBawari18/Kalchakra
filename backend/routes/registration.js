@@ -3,6 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const cloudinary = require('cloudinary').v2;
+const path = require('path');
 const Registration = require('../models/Registration');
 const GameState = require('../models/GameState');
 const Team = require('../models/Team');
@@ -16,15 +17,31 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// Multer with Cloudinary storage
-const storage = new CloudinaryStorage({
-  cloudinary,
-  params: {
-    folder: 'kalchakra-receipts',
-    allowed_formats: ['jpg', 'jpeg', 'png'],
-    resource_type: 'image',
-  },
-});
+// Store receipts in Cloudinary when configured. During local development,
+// retain them in the backend uploads folder so a missing Cloudinary account
+// does not make registration submissions fail.
+const hasCloudinaryCredentials = Boolean(
+  process.env.CLOUDINARY_CLOUD_NAME &&
+  process.env.CLOUDINARY_API_KEY &&
+  process.env.CLOUDINARY_API_SECRET
+);
+
+const storage = hasCloudinaryCredentials
+  ? new CloudinaryStorage({
+      cloudinary,
+      params: {
+        folder: 'kalchakra-receipts',
+        allowed_formats: ['jpg', 'jpeg', 'png'],
+        resource_type: 'image',
+      },
+    })
+  : multer.diskStorage({
+      destination: path.join(__dirname, '../uploads'),
+      filename: (req, file, callback) => {
+        const extension = path.extname(file.originalname).toLowerCase();
+        callback(null, `reg_${Date.now()}${extension}`);
+      },
+    });
 
 const upload = multer({
   storage,
@@ -67,7 +84,9 @@ router.post('/', upload.single('screenshot'), async (req, res) => {
       payment: {
         method: paymentMethod,
         transactionId,
-        screenshotPath: req.file.path  // Cloudinary returns a full HTTPS URL
+        screenshotPath: hasCloudinaryCredentials
+          ? req.file.path
+          : `uploads/${req.file.filename}`
       }
     });
 

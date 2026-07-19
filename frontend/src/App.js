@@ -15,7 +15,7 @@ function SocketBridge() {
   const socketRef = useRef(null);
 
   useEffect(() => {
-    const s = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000', { reconnection: true });
+    const s = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:5001', { reconnection: true });
     socketRef.current = s;
 
     const events = ['leaderboard_update','round_unlocked','round_locked','all_rounds_locked','freeze','penalty','broadcast','lab_assistant','game_started','game_stopped','team_created','admin_log'];

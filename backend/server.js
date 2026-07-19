@@ -13,16 +13,20 @@ const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
+const developmentOrigins = [
+  process.env.CLIENT_URL || 'http://localhost:3000',
+  'http://localhost:3001'
+];
 
 const io = new Server(server, {
   cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:3000',
+    origin: process.env.NODE_ENV === 'production' ? '*' : developmentOrigins,
     methods: ['GET', 'POST']
   }
 });
 
 // Middleware
-const corsOrigin = process.env.NODE_ENV === 'production' ? '*' : (process.env.CLIENT_URL || 'http://localhost:3000');
+const corsOrigin = process.env.NODE_ENV === 'production' ? '*' : developmentOrigins;
 app.use(cors({ origin: corsOrigin }));
 
 app.use(express.json());
@@ -74,7 +78,9 @@ io.on('connection', (socket) => {
 });
 
 // Start server immediately so Render doesn't timeout waiting for port to bind
-const PORT = process.env.PORT || 5000;
+// Port 5000 is commonly reserved by macOS services. Keep this in sync with
+// the frontend development proxy and its API/socket fallbacks.
+const PORT = process.env.PORT || 5001;
 server.listen(PORT, () => {
   console.log(`✓ Kalchakra server running on port ${PORT}`);
   console.log(`  Admin key: ${process.env.ADMIN_KEY}`);
@@ -84,4 +90,3 @@ server.listen(PORT, () => {
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('✓ MongoDB connected'))
   .catch(err => console.error('✗ MongoDB connection error:', err.message));
-
